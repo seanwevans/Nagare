@@ -1,0 +1,52 @@
+# PEG for Nagare
+
+ELLIPSES <- '...'
+LB <- '\r'? '\n'
+WHITESPACE <- [ \t]+
+IDEN <- [a-zA-Z_][a-zA-Z0-9_]*
+NUM <- '-'? [0-9]+ ('.' [0-9]+)?
+STR <- '"' ( ~["\\] / '\\' . )* '"'
+RELATIONAL_OPERATOR <- '<=' / '>=' / '<' / '>' / '==' / '!='
+BOOLEAN_OPERATOR <- '&&' / '||' / '~`'
+SHEBANG <- '!' [ \t]* [^ \t\n\r]* [ \t]* [Nn][Aa][Gg][Aa][Rr][EÉeé] LB
+
+comment <- '!' [^ \n\r]* LB / '!!!' .*? '!!!' LB
+
+arithmeticExpression <- arithmeticExpression '+' arithmeticExpression /
+                         arithmeticExpression '-' arithmeticExpression /
+                         arithmeticExpression '*' arithmeticExpression /
+                         arithmeticExpression '/' arithmeticExpression /
+                         arithmeticExpression '**' arithmeticExpression /
+                         '(' arithmeticExpression ')' /
+                         IDEN /
+                         NUM /
+                         ELLIPSES
+
+booleanExpression <- arithmeticExpression RELATIONAL_OPERATOR arithmeticExpression /
+                      booleanExpression BOOLEAN_OPERATOR booleanExpression /
+                      '(' booleanExpression ')' /
+                      ELLIPSES
+
+stringExpression <- STR / ELLIPSES
+
+vector <- '<' arithmeticExpression (',' arithmeticExpression)* '>' / ELLIPSES
+
+expression <- arithmeticExpression / booleanExpression / stringExpression / vector / ELLIPSES
+assignment <- IDEN '=' expression
+command <- IDEN expression?
+statement <- assignment / command / ELLIPSES
+importStatement <- 'import' STR ('as' IDEN)?
+fromimportStatement <- 'from' STR importStatement
+globalStatement <- 'global' IDEN ':=' expression
+stateStatement <- 'state' IDEN ':=' expression
+fieldStatement <- 'field' IDEN ':=' vector
+programStatement <- 'program' IDEN ':=' vector
+returnStatement <- 'return' expression
+globalDefinition <- globalStatement / stateStatement / fieldStatement / programStatement / ELLIPSES
+beginBlock <- 'BEGIN' comment* '{' (globalDefinition / ELLIPSES)* '}'
+positionDefinition <- IDEN ('{' returnStatement '}' / ELLIPSES)
+positionsBlock <- 'POSITIONS' comment* '{' (positionDefinition / ELLIPSES)* '}'
+zoneDefinition <- (IDEN / ELLIPSES) (vector / ELLIPSES) (block / ELLIPSES)
+zonesBlock <- 'ZONES' comment* '{' (zoneDefinition / ELLIPSES)* '}'
+block <- beginBlock / positionsBlock / zonesBlock
+program <- SHEBANG? comment* block comment* block comment* block

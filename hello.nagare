@@ -1,0 +1,15 @@
+!/usr/bin/env nagare
+
+BEGIN {
+  program program { x+1, y } 
+}
+
+ZONES { 
+  print { Ellipse((1.5, 0), 1, 1) }
+  done  { Ellipse((2.5, 0), 1, 1) }
+}
+
+EXECUTE { 
+  out<print>  { display "Hello World!" }
+  end<done>   { finish } 
+}

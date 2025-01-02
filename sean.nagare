@@ -1,0 +1,33 @@
+!/usr/bin/env nagare
+
+BEGIN {
+  program { x+1, y } 
+}
+
+ZONES { 
+  print { Ellipse((1.5, 0), 1, 1) }
+  done  { Ellipse((2.5, 0), 1, 1) }
+}
+
+EXECUTE { 
+  out<print> { display "Hello World!" }
+  end<done>  { finish } 
+}
+
+
+!!!
+
+(0,0) init: T=0, D=1e-5, T_m=2**32
+(0,0) field: { 0, 0 }
+(0,0) program: { x+1, y }
+(1,0) ZONE print
+(1,0)   EXECUTE out
+(1,0)     1. `printf("Hello World!\n");`
+(1,0) field: { 0, 0 }
+(1,0) program: { x+1, y }
+(2,0) EXIT print
+(2,0) ZONE done
+(2,0)   EXECUTE end
+(2,0)     1. `exit(0);`
+
+!!!

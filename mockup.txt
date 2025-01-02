@@ -1,0 +1,87 @@
+!/usr/bin/env nagare
+!This is a comment
+
+!!!This is a 
+mult-line
+comment!!!
+
+BEGIN !Execution always begins here
+{
+  global T := 0                     ! time
+  global max_T := 2**32             ! maximum time steps for program to run
+  global Δ := 1e-5                  ! time step
+  state position := (0, 0)          ! initial position
+  field default := <x**2, y**2+1>   ! default field
+  program program := <x+1, y>       ! default program
+}
+
+POSITIONS { ! put a comment here for fun
+    isInsideCurve { return x**2+y**2 <= 1 } ! parametric explicit
+    isInsideCurve2 { (x+1)**4+y**4 <= 1/2 } ! parametric implicit
+    c3 { (x+10)**2 +  (y-4)**2 < 5 && x <= 1/@phi } ! compound parametric
+    c4 { Polygon([(1,2), (4,5), ...]) }     ! closed polygon defined by verticies    
+    c5 { Ellipse((-53, 102.3), 13, 7) }     ! ellipse with semi-major axis 13 and semi-minor axis of 7 @ (-53, 102.3)
+}
+
+ZONES {
+    ! common use case: override background program and execute custom code
+    executionZone1 <isInsideCurve> {    ! implicit functional representation, implied that position is passed like isInsideCurve(x,y)
+      default = <x**3, y**3+1>          ! change the default field
+    }
+
+    ! can change anything
+    executionZone2 <x**2 + y**2 <= 1> { ! anonymous parametric
+      program = <x, y+1>                ! change the program
+      Δ = 10                            ! bump up the step size
+      teleport (3224.21784827, #pi)     ! new keyword: `teleport`,  new constant: `@pi`
+    }
+
+    ! `import x as y`
+    import "some/path/to/a/file/containing/executionZoneα.ext"      
+        as executionZone3           ! do whitespace however you want
+            <isInsideCurve2>        ! implicit functional as an import
+
+    !if you have one command only this works
+    executionZone4 <c3> reset       ! inline. `reset` reverts all values back to default
+
+    !and is equivalent to this
+    executionZone5 <c4> {           ! block
+      ...                           ! valid placeholder stand-in
+      reset
+    }
+
+    executionZone6 <c5> {
+        local var = 0       ! arbitrary precision integer type
+        local var2 = 1.0    ! IEEE floating point type
+        local var3 = "dis"  ! string type
+        local @var4 = [ "arrays" "must" "contain" "the" "same" "type" "but are mutable" ]
+        local &var5 = ( "tuples" "can" var4 "contain" "anything" "but are immutable" )
+        local %var6 = { "stealing"=>"hashes from perl", "could"=>"work" }
+        display '1', $var, " 2", $var2, """3 """, $var3         ! prints "10 21.03 dis" to stdout
+        var += 1            ! var = var + 1
+        var2 *= #e          ! var2 = var2 * @e
+        var3 .= "tance"     ! var3 = var3."tance"
+        error $var, $var2, ", no-dis", $var3                    ! prints "12.718distance" to stderr
+        stream handle $var+1, " ", 1/$var2, " ", $var3."sean"   ! streams "2 0.368 distancesean" to handle
+        stream stderr ...   ! or do it this way
+        stream stdout ...   ! or this way
+    }
+
+    executionZone7 <c5-100> {   ! <c5-100> == <c5> - 100 == <c5[1] - 100, c5[2] - 100>
+        accept var              !!! `accept` reads input from stdout, 
+                                blocking program execution until the user provides input.
+                                lexically, this is not the same var as before, 
+                                execution zones are basically namespaces !!!
+        local var = stream stdin    ! alternate notation
+    }
+
+    executionZone8 <c3 x c2> {  ! <c3 * c2> == <c3[0]*c2[0], c3[1]*c2[1]>
+        local var = $random     ! in (0,1)
+        if ($random < 0.5) { default = <sin(x), cos(y)> }
+        else { default = <y*cos(1/x), x*sin(1/y)> }
+        `clear` ! a system command
+    }
+
+    !do this to wrap up
+    executionZoneOmega <(x+53)**2+(y+300)**2<=6> {finish} ! single-line block
+}
