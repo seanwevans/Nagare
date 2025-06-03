@@ -9,6 +9,7 @@ Nagare is a continuous, Befunge-like programming language designed for simulatin
 - **tester.c** – A multi-threaded simulation program that applies differential equations to evolve points, writes results to files, and simulates movement within zones.
 - **ring.c** – Thread-safe ring buffer utility for managing circular data storage.
 - **pp.py** – A Python script that visualizes simulation output by generating an animated GIF from result files.
+- **nagare_interpreter.py** – Minimal Python interpreter for running Nagare scripts without compiling the C code.
 
 ### Grammar Files
 - **grammar.txt** – ANTLR grammar defining the Nagare DSL syntax, covering arithmetic expressions, boolean logic, zone definitions, and execution blocks.
@@ -48,6 +49,12 @@ EXECUTE {
 ```
 
 ### 2. Run the Simulation
+You can either compile the C implementation or use the lightweight
+Python interpreter:
+```bash
+python3 nagare_interpreter.py hello.nagare
+```
+The original C workflow is still available and shown below.
 Compile and execute the core C programs:
 ```bash
 # Compile the simulation programs
