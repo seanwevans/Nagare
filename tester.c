@@ -5,7 +5,7 @@
 #include <pthread.h>
 #include <string.h>
 
-#define MAX_ITERATIONS 1e9
+#define MAX_ITERATIONS 1000000000
 #define MAX_THREADS    3
 #define BUFFER_SIZE    1<<8
 #define CIRCLE_ZONE_X  0
@@ -95,11 +95,19 @@ int main(int argc, char* argv[]) {
     ThreadData* thread_data = load_data(argv[1]);
 
     pthread_t threads[MAX_THREADS];
-    for (int i = 0; i < MAX_THREADS; i++)
-        pthread_create(&threads[i], NULL, simulate, &thread_data[i]);    
-        
-    for (int i = 0; i < MAX_THREADS; i++)
-        pthread_join(threads[i], NULL);
+    for (int i = 0; i < MAX_THREADS; i++) {
+        int rc = pthread_create(&threads[i], NULL, simulate, &thread_data[i]);
+        if (rc != 0) {
+            fprintf(stderr, "Error creating thread %d: %s\n", i, strerror(rc));
+        }
+    }
+
+    for (int i = 0; i < MAX_THREADS; i++) {
+        int rc = pthread_join(threads[i], NULL);
+        if (rc != 0) {
+            fprintf(stderr, "Error joining thread %d: %s\n", i, strerror(rc));
+        }
+    }
 
     free(thread_data);
 
