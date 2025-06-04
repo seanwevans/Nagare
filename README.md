@@ -12,7 +12,7 @@ Nagare is a continuous, Befunge-like programming language designed for simulatin
 - **nagare_interpreter.py** – Minimal Python interpreter for running Nagare scripts without compiling the C code.
 
 ### Grammar Files
-- **grammar.txt** – ANTLR grammar defining the Nagare DSL syntax, covering arithmetic expressions, boolean logic, zone definitions, and execution blocks.
+- **grammar.g4** – ANTLR grammar defining the Nagare DSL syntax, covering arithmetic expressions, boolean logic, zone definitions, and execution blocks.
 
 ### Simulation Files
 - **sean.nagare** – Example simulation script written in Nagare. Defines zones and executes commands when points enter specific regions.
