@@ -80,6 +80,17 @@ def parse_script(path: str) -> Tuple[str, str, List[Zone]]:
     return prog_x, prog_y, list(zone_map.values())
 
 def run(prog_x: str, prog_y: str, zones: List[Zone]) -> None:
+    """Execute the simulation for the given vector field and zones.
+
+    Parameters
+    ----------
+    prog_x: str
+        Expression computing the next ``x`` value.
+    prog_y: str
+        Expression computing the next ``y`` value.
+    zones: List[Zone]
+        List of zones with associated actions to trigger.
+    """
     x = 0.0
     y = 0.0
     step = 0
@@ -104,6 +115,14 @@ def run(prog_x: str, prog_y: str, zones: List[Zone]) -> None:
             return
 
 def main(argv: List[str]) -> None:
+    """Command line entry point for the interpreter.
+
+    Parameters
+    ----------
+    argv: List[str]
+        Arguments passed from the command line, where the first element is
+        the path to the ``.nagare`` script.
+    """
     if len(argv) < 1:
         print("Usage: nagare_interpreter.py <file.nagare>")
         return
