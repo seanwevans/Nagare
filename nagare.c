@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include <stddef.h>
 
 typedef struct point {
     float x;
