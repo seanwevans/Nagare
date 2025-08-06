@@ -7,7 +7,6 @@ import sys
 import tempfile
 import argparse
 
-import numpy as np
 import matplotlib.pyplot as plt
 
 
@@ -25,15 +24,10 @@ def parse_file(file_path):
             yield iteration, inside, x, y
 
 
-def generate_frame(x_values, y_values, idx, n, folder):
-    fig, ax = plt.subplots(figsize=(5, 5))
-    ax.set_xlim(-20, 20)
-    ax.set_ylim(-20, 20)
-    ax.set_aspect('equal', 'box')
-    ax.plot(x_values, y_values, 'o-', alpha=1/100)
+def generate_frame(ax, line, x_values, y_values, idx, folder):
+    line.set_data(x_values, y_values)
     file_path = os.path.join(folder, f"frame_{idx}.png")
-    fig.savefig(file_path, dpi=80)
-    plt.close(fig)
+    ax.figure.savefig(file_path, dpi=80)
     return file_path
 
 
@@ -42,17 +36,23 @@ def compose_gif(file_path, out='animation_from_file.gif', fps=10):
     y_values = []
     frame_files = []
 
-    temp_folder = tempfile.mkdtemp()    
+    temp_folder = tempfile.mkdtemp()
     with open(file_path, 'r') as f:
         n = sum(1 for _ in f)
-    
+
+    fig, ax = plt.subplots(figsize=(5, 5))
+    ax.set_xlim(-20, 20)
+    ax.set_ylim(-20, 20)
+    ax.set_aspect('equal', 'box')
+    line, = ax.plot([], [], 'o-', alpha=1/100)
+
     interrupted = False
 
     try:
         for idx, (iteration, inside, x, y) in enumerate(parse_file(file_path)):
             x_values.append(x)
             y_values.append(y)
-            frame_file = generate_frame(x_values, y_values, idx, n, temp_folder)
+            frame_file = generate_frame(ax, line, x_values, y_values, idx, temp_folder)
             frame_files.append(frame_file)
             print(f"\rProcessed {idx+1} of {n} lines...", end="")
     except KeyboardInterrupt:
@@ -64,7 +64,8 @@ def compose_gif(file_path, out='animation_from_file.gif', fps=10):
         for frame_file in frame_files:
             image = imageio.imread(frame_file)
             writer.append_data(image)
-    
+
+    plt.close(fig)
     shutil.rmtree(temp_folder)
 
     if interrupted:
