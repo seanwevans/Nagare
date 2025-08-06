@@ -9,11 +9,13 @@ zone, the associated action is executed. Supported actions are
 ``display "message"`` and ``finish``.
 """
 
+import ast
 import math
+import operator
 import re
 import sys
 from dataclasses import dataclass
-from typing import Callable, Dict, List, Tuple
+from typing import Dict, List, Tuple
 
 @dataclass
 class Zone:
@@ -30,17 +32,64 @@ class Zone:
         return dx * dx + dy * dy <= 1.0
 
 def eval_expr(expr: str, x: float, y: float) -> float:
-    """Evaluate a simple arithmetic expression using x and y."""
-    allowed: Dict[str, float] = {
-        'x': x,
-        'y': y,
-        'sin': math.sin,
-        'cos': math.cos,
-        'tan': math.tan,
-        'pi': math.pi,
-        'e': math.e,
+    """Evaluate a simple arithmetic expression using ``x`` and ``y``.
+
+    The expression is parsed using :mod:`ast` and only a small subset of
+    nodes and functions are permitted. This avoids executing arbitrary
+    Python code while still supporting the math needed by the
+    interpreter.
+    """
+
+    allowed_funcs = {"sin": math.sin, "cos": math.cos, "tan": math.tan}
+    allowed_names: Dict[str, float] = {
+        "x": x,
+        "y": y,
+        "pi": math.pi,
+        "e": math.e,
     }
-    return eval(expr, {"__builtins__": {}}, allowed)
+
+    tree = ast.parse(expr, mode="eval")
+
+    def _eval(node: ast.AST) -> float:
+        if isinstance(node, ast.Expression):
+            return _eval(node.body)
+        if isinstance(node, ast.BinOp):
+            ops = {
+                ast.Add: operator.add,
+                ast.Sub: operator.sub,
+                ast.Mult: operator.mul,
+                ast.Div: operator.truediv,
+                ast.Pow: operator.pow,
+                ast.Mod: operator.mod,
+            }
+            op_type = type(node.op)
+            if op_type not in ops:
+                raise ValueError(f"Unsupported operator: {op_type.__name__}")
+            return ops[op_type](_eval(node.left), _eval(node.right))
+        if isinstance(node, ast.UnaryOp):
+            ops = {ast.UAdd: operator.pos, ast.USub: operator.neg}
+            op_type = type(node.op)
+            if op_type not in ops:
+                raise ValueError(f"Unsupported operator: {op_type.__name__}")
+            return ops[op_type](_eval(node.operand))
+        if isinstance(node, ast.Call):
+            if not isinstance(node.func, ast.Name) or node.func.id not in allowed_funcs:
+                raise ValueError("Function not allowed")
+            if node.keywords:
+                raise ValueError("Keyword arguments are not allowed")
+            args = [_eval(arg) for arg in node.args]
+            return allowed_funcs[node.func.id](*args)
+        if isinstance(node, ast.Name):
+            if node.id not in allowed_names:
+                raise ValueError(f"Unknown identifier: {node.id}")
+            return allowed_names[node.id]
+        if isinstance(node, ast.Constant):
+            if isinstance(node.value, (int, float)):
+                return float(node.value)
+            raise ValueError("Constants must be numbers")
+        raise ValueError(f"Unsupported expression: {type(node).__name__}")
+
+    return _eval(tree)
 
 def parse_program(src: str) -> Tuple[str, str]:
     m = re.search(r'program\s+(?:\w+\s+)?\{\s*([^,]+)\s*,\s*([^}]+)\s*\}', src)
