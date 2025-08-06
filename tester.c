@@ -31,31 +31,34 @@ bool inside_circle(const float* x, const float* y) {
     return ((*x-CIRCLE_ZONE_X)*(*x-CIRCLE_ZONE_X) + (*y-CIRCLE_ZONE_Y)*(*y-CIRCLE_ZONE_Y)) <= CIRCLE_RAD_SQ;
 }
 
-ThreadData* load_data(const char* filepath) {
+int load_data(const char* filepath, ThreadData** out_data) {
     FILE* file = fopen(filepath, "r");
     if (!file) {
         perror("Error opening file");
-        return NULL;
+        return 0;
     }
 
     ThreadData* data = calloc(MAX_THREADS, sizeof(ThreadData));
     if (!data) {
         perror("Error allocating memory");
         fclose(file);
-        return NULL;
+        return 0;
     }
 
     char line[BUFFER_SIZE];
     int index = 0;
-    while (fgets(line, sizeof(line), file) && index < MAX_THREADS) {        
-        sscanf(line, "%f %f", &data[index].x0, &data[index].y0);
-        sprintf(data[index].filepath, "%f_%f.txt", data[index].x0, data[index].y0);
-        index++;
+    while (fgets(line, sizeof(line), file) && index < MAX_THREADS) {
+        if (sscanf(line, "%f %f", &data[index].x0, &data[index].y0) == 2) {
+            snprintf(data[index].filepath, sizeof(data[index].filepath),
+                     "%f_%f.txt", data[index].x0, data[index].y0);
+            index++;
+        }
     }
 
     fclose(file);
 
-    return data;
+    *out_data = data;
+    return index;
 }
 
 void* simulate(void* arg) {
@@ -92,17 +95,18 @@ int main(int argc, char* argv[]) {
         // {"-0.5_-0.5.txt", -0.5, -0.5}
     // };
 
-    ThreadData* thread_data = load_data(argv[1]);
+    ThreadData* thread_data = NULL;
+    int thread_count = load_data(argv[1], &thread_data);
 
     pthread_t threads[MAX_THREADS];
-    for (int i = 0; i < MAX_THREADS; i++) {
+    for (int i = 0; i < thread_count; i++) {
         int rc = pthread_create(&threads[i], NULL, simulate, &thread_data[i]);
         if (rc != 0) {
             fprintf(stderr, "Error creating thread %d: %s\n", i, strerror(rc));
         }
     }
 
-    for (int i = 0; i < MAX_THREADS; i++) {
+    for (int i = 0; i < thread_count; i++) {
         int rc = pthread_join(threads[i], NULL);
         if (rc != 0) {
             fprintf(stderr, "Error joining thread %d: %s\n", i, strerror(rc));
