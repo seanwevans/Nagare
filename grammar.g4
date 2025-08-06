@@ -14,9 +14,9 @@ LB: '\r'? '\n' ;
 NUM: '-'? [0-9]+ ('.' [0-9]+)? ;
 STR: '"' ( ~["\\] | '\\' . )* '"' ;
 RELATIONAL_OPERATOR: '<=' | '>=' | '<' | '>' | '==' | '!=' ;
-BOOLEAN_OPERATOR: '&&' | '||' | '~` ;
+BOOLEAN_OPERATOR: '&&' | '||' | '!' ;
 
-SHEBANG: '!' '\s*' '\S+' '\s*' [Nn][Aa][Gg][Aa][Rr][EÉeé] LB ;
+SHEBANG: '!' ~[\r\n]* [Nn][Aa][Gg][Aa][Rr][EÉeé] LB ;
 SINGLE_LINE_COMMENT: '!' .*? LB -> skip ;
 MULTI_LINE_COMMENT: '!!!' .*? '!!!' LB -> skip ;
 
@@ -51,7 +51,7 @@ command:    IDEN     expression? ;
 statement:  assignment | command | ELLIPSES ;
 
 importStatement: 'import' STR ( 'as' IDEN )? ;
-fromimportStatement 'from' STR importStatement ;
+fromimportStatement: 'from' STR importStatement ;
 
 globalStatement:  'global'  IDEN ':=' expression ;
 stateStatement:   'state'   IDEN ':=' expression ;
@@ -59,10 +59,10 @@ fieldStatement:   'field'   IDEN ':=' vector ;
 programStatement: 'program' IDEN ':=' vector ;
 returnStatement:  'return' expression ;
 
-globalDefinition: globalStatement | stateStatement | fieldStatement| programStatement | ELLIPSES
+globalDefinition: globalStatement | stateStatement | fieldStatement| programStatement | ELLIPSES ;
 beginBlock:     'BEGIN'     comment* '{' ( globalDefinition*   | ELLIPSES ) '}' ;
 
-positionDefinition: IDEN ( '{' returnStatement '}' | ELLIPSES )
+positionDefinition: IDEN ( '{' returnStatement '}' | ELLIPSES ) ;
 positionsBlock: 'POSITIONS' comment* '{' ( positionDefinition* | ELLIPSES ) '}' ;
 
 zoneDefinition: (IDEN|ELLIPSES) (vector|ELLIPSES) (block|ELLIPSES) ;
