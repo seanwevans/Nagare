@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from nagare_interpreter import parse_zones, parse_script, run
+from nagare_interpreter import parse_zones, parse_script, run, parse_execute
 
 
 def test_parse_zones_multiple_definitions():
@@ -21,3 +21,9 @@ def test_run_triggers_display_and_finish(capsys):
     run(prog_x, prog_y, zones)
     captured = capsys.readouterr().out.strip().splitlines()
     assert captured == ["Hello zone", "Finished at step 2"]
+
+
+def test_parse_execute_raises_for_unknown_zone():
+    src = "EXECUTE { prog<missing> { display \"hello\" } }"
+    with pytest.raises(ValueError, match="missing"):
+        parse_execute(src, {})
