@@ -112,7 +112,7 @@ def parse_execute(src: str, zones: Dict[str, Zone]) -> None:
     )
     for zone_name, action_block, msg in exec_pattern.findall(src):
         if zone_name not in zones:
-            continue
+            raise ValueError(f"Unknown zone: {zone_name}")
         if action_block.startswith('display'):
             zones[zone_name].action = ('display', msg)
         else:
