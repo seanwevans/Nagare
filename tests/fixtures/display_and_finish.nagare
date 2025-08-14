@@ -1,0 +1,13 @@
+BEGIN {
+  program prog { x + 1, y }
+}
+
+ZONES {
+  msg { Ellipse((1, 0), 0.5, 0.5) }
+  end { Ellipse((2, 0), 0.5, 0.5) }
+}
+
+EXECUTE {
+  prog<msg> { display "Hello zone" }
+  prog<end> { finish }
+}
