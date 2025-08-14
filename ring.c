@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <unistd.h>
+
+#define WRITER_ITERS 25
+#define READER_ITERS 25
 
 
 typedef struct RingBuffer {
@@ -35,6 +39,7 @@ RingBuffer create_buffer(size_t buffer_size) {
 }
 
 void print_buffer(RingBuffer* cache, DataType type) {
+    pthread_mutex_lock(&cache->lock); // Critical section: iterate safely over shared buffer
     for (size_t i = 0; i < cache->capacity; ++i) {
         if (cache->buffer[i]) {
             switch (type) {
@@ -55,6 +60,7 @@ void print_buffer(RingBuffer* cache, DataType type) {
             printf("NULL ");
         }
     }
+    pthread_mutex_unlock(&cache->lock);
     printf("\n");
 }
 
@@ -78,18 +84,42 @@ void destroy_buffer(RingBuffer* cache) {
     free(cache->buffer);
 }
 
+void* writer(void* arg);
+void* reader(void* arg);
+
 int main() {
     RingBuffer cache = create_buffer(10);
 
-    for (size_t i = 0; i < cache.capacity; ++i) {
-        int* value = (int*)malloc(sizeof(int));
-        *value = (int)(i * i);
-        add_to_buffer(&cache, value);
-    }
+    pthread_t w1, w2, r;
+    pthread_create(&w1, NULL, writer, &cache);
+    pthread_create(&w2, NULL, writer, &cache);
+    pthread_create(&r, NULL, reader, &cache);
 
-    printf("\n");
-    
+    pthread_join(w1, NULL);
+    pthread_join(w2, NULL);
+    pthread_join(r, NULL);
+
     destroy_buffer(&cache);
 
     return 0;
+}
+
+void* writer(void* arg) {
+    RingBuffer* c = (RingBuffer*)arg;
+    for (int i = 0; i < WRITER_ITERS; ++i) {
+        int* value = (int*)malloc(sizeof(int));
+        *value = i;
+        add_to_buffer(c, value);
+        usleep(1000);
+    }
+    return NULL;
+}
+
+void* reader(void* arg) {
+    RingBuffer* c = (RingBuffer*)arg;
+    for (int i = 0; i < READER_ITERS; ++i) {
+        print_buffer(c, INT);
+        usleep(1000);
+    }
+    return NULL;
 }
