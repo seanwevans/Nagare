@@ -9,6 +9,7 @@ zone, the associated action is executed. Supported actions are
 ``display "message"`` and ``finish``.
 """
 
+import argparse
 import ast
 import math
 import operator
@@ -128,7 +129,7 @@ def parse_script(path: str) -> Tuple[str, str, List[Zone]]:
     parse_execute(content, zone_map)
     return prog_x, prog_y, list(zone_map.values())
 
-def run(prog_x: str, prog_y: str, zones: List[Zone]) -> None:
+def run(prog_x: str, prog_y: str, zones: List[Zone], step_limit: int = 10000) -> None:
     """Execute the simulation for the given vector field and zones.
 
     Parameters
@@ -139,6 +140,8 @@ def run(prog_x: str, prog_y: str, zones: List[Zone]) -> None:
         Expression computing the next ``y`` value.
     zones: List[Zone]
         List of zones with associated actions to trigger.
+    step_limit: int
+        Maximum number of steps to execute before aborting.
     """
     x = 0.0
     y = 0.0
@@ -159,7 +162,7 @@ def run(prog_x: str, prog_y: str, zones: List[Zone]) -> None:
                 elif z.action[0] == 'finish':
                     print("Finished at step", step)
                     return
-        if step > 10000:
+        if step_limit is not None and step >= step_limit:
             print("Maximum steps reached")
             return
 
@@ -172,11 +175,17 @@ def main(argv: List[str]) -> None:
         Arguments passed from the command line, where the first element is
         the path to the ``.nagare`` script.
     """
-    if len(argv) < 1:
-        print("Usage: nagare_interpreter.py <file.nagare>")
-        return
-    prog_x, prog_y, zones = parse_script(argv[0])
-    run(prog_x, prog_y, zones)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("script", help="Path to .nagare script")
+    parser.add_argument(
+        "--step-limit",
+        type=int,
+        default=10000,
+        help="Maximum number of steps to execute",
+    )
+    args = parser.parse_args(argv)
+    prog_x, prog_y, zones = parse_script(args.script)
+    run(prog_x, prog_y, zones, step_limit=args.step_limit)
 
 if __name__ == '__main__':
     main(sys.argv[1:])
