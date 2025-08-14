@@ -36,8 +36,8 @@ typedef struct initInfo {
 } initInfo;
 
 typedef struct executionZone {
-    boundary_func boundry;  // defines the execution zone boundry. True==inside
-    char** instructions;    // list of instructions for zone
+    boundary_func boundary;  // defines the execution zone boundary. True==inside
+    char** instructions;     // list of instructions for zone
 } executionZone;
 
 float f_1(float x) { return x + 1; }
@@ -57,8 +57,8 @@ int main() {
         .program = { .f2 = { { f_3 }, { f_4 } } }
     };
 
-    executionZone ez1 = { 
-        .boundry = inside_circle,
+    executionZone ez1 = {
+        .boundary = inside_circle,
         .instructions = (char*[]) {
             "thread_data_t* data = (thread_data_t*)arg;",
             "const uint8_t *grid = data->grid;",
