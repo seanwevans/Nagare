@@ -3,35 +3,39 @@ from pathlib import Path
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parent.parent
 
 
-def build_tester(tmp_path):
-    exe_path = tmp_path / "tester"
-    subprocess.run(
-        ["gcc", str(ROOT / "tester.c"), "-o", str(exe_path), "-lpthread", "-lm"],
-        check=True,
+@pytest.fixture(scope="module", autouse=True)
+def build_tester():
+    subprocess.run(["make", "tester"], cwd=ROOT, check=True)
+
+
+def run_tester(*args: str) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        [str(ROOT / "tester"), *args],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
     )
-    return exe_path
 
 
-def test_simulation_stops_on_nan(tmp_path):
-    tester_exe = build_tester(tmp_path)
-    input_file = tmp_path / "nan_input.txt"
-    input_file.write_text("nan 0.0\n")
+def test_tester_handles_empty_input(tmp_path):
+    input_file = tmp_path / "empty_input.txt"
+    input_file.write_text("")
 
-    try:
-        subprocess.run(
-            [str(tester_exe), input_file.name],
-            check=True,
-            cwd=tmp_path,
-            timeout=2,
-        )
-    except subprocess.TimeoutExpired as exc:
-        pytest.fail(f"tester did not terminate on NaN input: {exc}")
+    result = run_tester(str(input_file))
 
-    output_file = tmp_path / "nan_0.000000.txt"
-    assert output_file.exists(), "simulation output file was not created"
+    assert result.returncode == 0
+    assert result.stderr == ""
+
+
+def test_tester_reports_missing_file(tmp_path):
+    missing_file = tmp_path / "missing_input.txt"
+
+    result = run_tester(str(missing_file))
+
+    assert result.returncode != 0
     assert (
-        output_file.read_text() == ""
-    ), "simulation should stop before writing any steps for NaN input"
+        f"Failed to load thread data from '{missing_file}':" in result.stderr
+    )

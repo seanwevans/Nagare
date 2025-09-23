@@ -4,6 +4,7 @@
 #include <math.h>
 #include <pthread.h>
 #include <string.h>
+#include <errno.h>
 
 #define MAX_ITERATIONS 1000000000
 #define MAX_THREADS    3
@@ -32,17 +33,22 @@ bool inside_circle(const float* x, const float* y) {
 }
 
 int load_data(const char* filepath, ThreadData** out_data) {
+    if (out_data == NULL) {
+        return -EINVAL;
+    }
+
+    *out_data = NULL;
+
     FILE* file = fopen(filepath, "r");
     if (!file) {
-        perror("Error opening file");
-        return 0;
+        return -errno;
     }
 
     ThreadData* data = calloc(MAX_THREADS, sizeof(ThreadData));
     if (!data) {
-        perror("Error allocating memory");
+        int err = errno ? errno : ENOMEM;
         fclose(file);
-        return 0;
+        return -err;
     }
 
     char line[BUFFER_SIZE];
@@ -55,7 +61,11 @@ int load_data(const char* filepath, ThreadData** out_data) {
         }
     }
 
-    fclose(file);
+    if (fclose(file) != 0) {
+        int err = errno ? errno : EIO;
+        free(data);
+        return -err;
+    }
 
     *out_data = data;
     return index;
@@ -99,6 +109,11 @@ int main(int argc, char* argv[]) {
 
     ThreadData* thread_data = NULL;
     int thread_count = load_data(argv[1], &thread_data);
+    if (thread_count < 0) {
+        fprintf(stderr, "Failed to load thread data from '%s': %s\n", argv[1],
+                strerror(-thread_count));
+        return EXIT_FAILURE;
+    }
 
     pthread_t threads[MAX_THREADS];
     for (int i = 0; i < thread_count; i++) {
