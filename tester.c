@@ -80,7 +80,9 @@ void* simulate(void* arg) {
         
     float x = data->x0, y = data->y0;
 
-    for(int i = 0; (i < MAX_ITERATIONS) && (!isinf(x)) && (!isinf(y)); ++i) {
+    // Stop immediately once the simulated values leave the finite domain so
+    // NaNs and infinities do not generate unbounded output.
+    for (int i = 0; (i < MAX_ITERATIONS) && isfinite(x) && isfinite(y); ++i) {
         fprintf(file, "%d %d %.8f %.8f\n", i+1, inside_circle(&x, &y), x, y);       
         x += df_1(&x);
         y += df_2(&y);

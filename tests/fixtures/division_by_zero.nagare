@@ -1,0 +1,9 @@
+BEGIN {
+  program failing { x / 0, y }
+}
+
+ZONES {
+}
+
+EXECUTE {
+}
