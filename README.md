@@ -54,6 +54,9 @@ Python interpreter:
 ```bash
 python3 nagare_interpreter.py hello.nagare
 ```
+If an expression in the program cannot be evaluated (for example, due to a
+division by zero), the interpreter reports the error and exits with a non-zero
+status code so scripts can detect failures.
 The original C workflow is still available and shown below.
 Compile and execute the core C programs:
 ```bash
