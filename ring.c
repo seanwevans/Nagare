@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <assert.h>
 #include <pthread.h>
 #include <unistd.h>
 
@@ -11,8 +13,11 @@ typedef struct RingBuffer {
     size_t idx;
     size_t capacity;
     void** buffer;
+    size_t elem_size;
     pthread_mutex_t lock;
 } RingBuffer;
+
+static size_t slot_allocations = 0;
 
 typedef enum DataType {
     INT,
@@ -81,10 +86,23 @@ void print_buffer(RingBuffer* cache, DataType type) {
 }
 
 
-void add_to_buffer(RingBuffer* cache, void* value) {
+void add_to_buffer(RingBuffer* cache, const void* value) {
     pthread_mutex_lock(&cache->lock);
 
-    cache->buffer[cache->idx] = value;
+    void* slot = cache->buffer[cache->idx];
+
+    if (slot == NULL) {
+        slot = malloc(cache->elem_size);
+        if (!slot) {
+            pthread_mutex_unlock(&cache->lock);
+            fprintf(stderr, "Failed to allocate ring buffer slot.\n");
+            exit(EXIT_FAILURE);
+        }
+        cache->buffer[cache->idx] = slot;
+        ++slot_allocations;
+    }
+
+    memcpy(slot, value, cache->elem_size);
     cache->idx = ( cache->idx + 1 ) % cache->capacity;
 
     pthread_mutex_unlock(&cache->lock);
@@ -97,6 +115,7 @@ void destroy_buffer(RingBuffer* cache) {
     for (size_t i = 0; i < cache->capacity; ++i) {
         if (cache->buffer[i]) {
             free(cache->buffer[i]);
+            --slot_allocations;
         }
     }
     pthread_mutex_destroy(&cache->lock);
@@ -133,9 +152,8 @@ int main() {
 void* writer(void* arg) {
     RingBuffer* c = (RingBuffer*)arg;
     for (int i = 0; i < WRITER_ITERS; ++i) {
-        int* value = (int*)malloc(sizeof(int));
-        *value = i;
-        add_to_buffer(c, value);
+        int value = i;
+        add_to_buffer(c, &value);
         usleep(1000);
     }
     return NULL;
