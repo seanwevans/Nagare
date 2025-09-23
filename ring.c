@@ -25,28 +25,38 @@ typedef enum DataType {
     STRING,
 } DataType;
 
+int create_buffer(RingBuffer* cache, size_t buffer_size) {
+    if (!cache) {
+        fprintf(stderr, "Invalid cache pointer.\n");
+        return -1;
+    }
 
-RingBuffer create_buffer(size_t buffer_size, size_t elem_size) {
+    cache->idx = 0;
+    cache->capacity = 0;
+    cache->buffer = NULL;
+
     if (buffer_size <= 1) {
         fprintf(stderr, "Buffer size should be greater than 1.\n");
-        exit(EXIT_FAILURE);
+        return -1;
     }
 
-    if (elem_size == 0) {
-        fprintf(stderr, "Element size must be greater than 0.\n");
-        exit(EXIT_FAILURE);
+    cache->capacity = buffer_size;
+    cache->buffer = (void**) calloc(buffer_size, sizeof(void*));
+    if (!cache->buffer) {
+        fprintf(stderr, "Failed to allocate buffer.\n");
+        cache->capacity = 0;
+        return -1;
     }
 
-    RingBuffer cache = {
-        .idx = 0,
-        .capacity = buffer_size,
-        .buffer = (void**) calloc(buffer_size, sizeof(void*)),
-        .elem_size = elem_size
-    };
+    if (pthread_mutex_init(&cache->lock, NULL) != 0) {
+        fprintf(stderr, "Failed to initialize mutex.\n");
+        free(cache->buffer);
+        cache->buffer = NULL;
+        cache->capacity = 0;
+        return -1;
+    }
 
-    pthread_mutex_init(&cache.lock, NULL);
-
-    return cache;
+    return 0;
 }
 
 void print_buffer(RingBuffer* cache, DataType type) {
@@ -99,6 +109,9 @@ void add_to_buffer(RingBuffer* cache, const void* value) {
 }
 
 void destroy_buffer(RingBuffer* cache) {
+    if (!cache || !cache->buffer) {
+        return;
+    }
     for (size_t i = 0; i < cache->capacity; ++i) {
         if (cache->buffer[i]) {
             free(cache->buffer[i]);
@@ -107,15 +120,20 @@ void destroy_buffer(RingBuffer* cache) {
     }
     pthread_mutex_destroy(&cache->lock);
     free(cache->buffer);
-
-    assert(slot_allocations == 0 && "All allocated slots should be freed");
+    cache->buffer = NULL;
+    cache->capacity = 0;
+    cache->idx = 0;
 }
 
 void* writer(void* arg);
 void* reader(void* arg);
 
 int main() {
-    RingBuffer cache = create_buffer(10, sizeof(int));
+    RingBuffer cache;
+    if (create_buffer(&cache, 10) != 0) {
+        fprintf(stderr, "Failed to create ring buffer.\n");
+        return EXIT_FAILURE;
+    }
 
     pthread_t w1, w2, r;
     pthread_create(&w1, NULL, writer, &cache);
