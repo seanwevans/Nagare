@@ -129,7 +129,7 @@ def parse_script(path: str) -> Tuple[str, str, List[Zone]]:
     parse_execute(content, zone_map)
     return prog_x, prog_y, list(zone_map.values())
 
-def run(prog_x: str, prog_y: str, zones: List[Zone], step_limit: int = 10000) -> None:
+def run(prog_x: str, prog_y: str, zones: List[Zone], step_limit: int = 10000) -> bool:
     """Execute the simulation for the given vector field and zones.
 
     Parameters
@@ -142,6 +142,12 @@ def run(prog_x: str, prog_y: str, zones: List[Zone], step_limit: int = 10000) ->
         List of zones with associated actions to trigger.
     step_limit: int
         Maximum number of steps to execute before aborting.
+    Returns
+    -------
+    bool
+        ``True`` if the simulation completed normally (either by finishing or
+        reaching the step limit), ``False`` if evaluating either expression
+        failed.
     """
     x = 0.0
     y = 0.0
@@ -149,8 +155,22 @@ def run(prog_x: str, prog_y: str, zones: List[Zone], step_limit: int = 10000) ->
     triggered = set()
     while True:
         # update position
-        new_x = eval_expr(prog_x, x, y)
-        new_y = eval_expr(prog_y, x, y)
+        try:
+            new_x = eval_expr(prog_x, x, y)
+        except (ValueError, ZeroDivisionError, OverflowError) as exc:
+            print(
+                f"Error evaluating x-expression '{prog_x}': {exc}",
+                file=sys.stderr,
+            )
+            return False
+        try:
+            new_y = eval_expr(prog_y, x, y)
+        except (ValueError, ZeroDivisionError, OverflowError) as exc:
+            print(
+                f"Error evaluating y-expression '{prog_y}': {exc}",
+                file=sys.stderr,
+            )
+            return False
         x, y = new_x, new_y
         step += 1
         # check zones
@@ -161,10 +181,10 @@ def run(prog_x: str, prog_y: str, zones: List[Zone], step_limit: int = 10000) ->
                     print(z.action[1])
                 elif z.action[0] == 'finish':
                     print("Finished at step", step)
-                    return
+                    return True
         if step_limit is not None and step >= step_limit:
             print("Maximum steps reached")
-            return
+            return True
 
 def main(argv: List[str]) -> None:
     """Command line entry point for the interpreter.
@@ -185,7 +205,9 @@ def main(argv: List[str]) -> None:
     )
     args = parser.parse_args(argv)
     prog_x, prog_y, zones = parse_script(args.script)
-    run(prog_x, prog_y, zones, step_limit=args.step_limit)
+    success = run(prog_x, prog_y, zones, step_limit=args.step_limit)
+    if not success:
+        sys.exit(1)
 
 if __name__ == '__main__':
     main(sys.argv[1:])
