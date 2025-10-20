@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Nagare Simulation Player</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Nagare Simulation Player</h1>
+      <p>
+        Configure a vector field, zones, and entities, then run the simulation to watch
+        trajectories evolve. Click on the canvas to add entities. Use the forms to add
+        circular or rectangular zones.
+      </p>
+    </header>
+    <main>
+      <section class="controls">
+        <div class="card">
+          <h2>Vector Field</h2>
+          <label>
+            \(\dot{x}(x, y, t) =\)
+            <input id="fx" type="text" value="-y" />
+          </label>
+          <label>
+            \(\dot{y}(x, y, t) =\)
+            <input id="fy" type="text" value="x" />
+          </label>
+          <div class="grid">
+            <label>
+              Duration
+              <input id="duration" type="number" min="0.1" step="0.1" value="20" />
+            </label>
+            <label>
+              Time step
+              <input id="dt" type="number" min="0.001" step="0.001" value="0.05" />
+            </label>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Add Zone</h2>
+          <div class="grid">
+            <label>
+              Label
+              <input id="zoneLabel" type="text" placeholder="e.g. spiral" />
+            </label>
+            <label>
+              Type
+              <select id="zoneType">
+                <option value="circle">Circle</option>
+                <option value="rect">Rectangle</option>
+              </select>
+            </label>
+          </div>
+          <div class="grid" id="circleParams">
+            <label>
+              Center X
+              <input id="circleCx" type="number" value="0" step="0.1" />
+            </label>
+            <label>
+              Center Y
+              <input id="circleCy" type="number" value="0" step="0.1" />
+            </label>
+            <label>
+              Radius
+              <input id="circleR" type="number" value="2" min="0.1" step="0.1" />
+            </label>
+          </div>
+          <div class="grid hidden" id="rectParams">
+            <label>
+              Center X
+              <input id="rectCx" type="number" value="0" step="0.1" />
+            </label>
+            <label>
+              Center Y
+              <input id="rectCy" type="number" value="0" step="0.1" />
+            </label>
+            <label>
+              Width
+              <input id="rectW" type="number" value="2" min="0.1" step="0.1" />
+            </label>
+            <label>
+              Height
+              <input id="rectH" type="number" value="2" min="0.1" step="0.1" />
+            </label>
+          </div>
+          <button id="addZone">Add Zone</button>
+        </div>
+        <div class="card">
+          <h2>Zones</h2>
+          <ul id="zoneList"></ul>
+        </div>
+        <div class="card">
+          <h2>Entities</h2>
+          <p>Click on the canvas to place entities. Use the reset button to clear them.</p>
+          <div class="actions">
+            <button id="resetEntities" type="button">Reset Entities</button>
+            <button id="resetAll" type="button">Reset All</button>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Simulation</h2>
+          <button id="runSimulation" type="button">Run Simulation</button>
+          <p id="error" role="alert"></p>
+          <div>
+            <h3>Events</h3>
+            <ul id="eventLog"></ul>
+          </div>
+        </div>
+      </section>
+      <section class="viewer">
+        <canvas id="scene" width="640" height="480"></canvas>
+        <div class="legend">
+          <div><span class="badge zone"></span>Zone boundary</div>
+          <div><span class="badge entity"></span>Entity</div>
+          <div><span class="badge path"></span>Trajectory</div>
+        </div>
+      </section>
+    </main>
+    <script src="/static/app.js" type="module"></script>
+  </body>
+</html>
