@@ -1,4 +1,5 @@
 # Nagare Simulation Framework
+<img width="256" alt="Swirling Blues and Teals" src="https://github.com/user-attachments/assets/e85267ab-0624-4410-bc11-3f763721dfb2" />
 
 Nagare is a continuous, Befunge-like programming language designed for simulating dynamic systems involving vector fields, zones, and time-evolving entities. This project consists of a custom interpreter, simulation scripts, and visualization tools that facilitate the creation of field-based simulations with minimal effort.
 
