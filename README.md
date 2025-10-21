@@ -76,6 +76,29 @@ This generates an animated GIF of the simulation process.
 
 ---
 
+## Web-Based Simulation Player
+
+An interactive web application is included in `webapp/` for experimenting with Nagare
+vector fields in real time. The player lets you define zones, author vector fields, place
+entities, and watch their trajectories evolve alongside zone entry/exit events.
+
+### Launching the App
+
+1. Install Flask if it is not already available:
+   ```bash
+   pip install flask
+   ```
+2. Start the development server from the project root:
+   ```bash
+   python -m webapp.app
+   ```
+3. Open your browser to <http://localhost:5000> to configure and run simulations.
+
+Zones can be added via the sidebar, and entities are placed by clicking on the canvas.
+Simulation results animate directly in the browser and log zone events in the UI.
+
+---
+
 ## Installation and Dependencies
 **Requirements:**
 - C compiler (e.g., `gcc`)
