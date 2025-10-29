@@ -151,7 +151,13 @@ def _parse_zones(raw_zones: Iterable[Dict]) -> List[Zone]:
         params = {}
         for key in ("cx", "cy", "r", "w", "h"):
             if key in raw:
-                params[key] = float(raw[key])
+                value = raw[key]
+                try:
+                    params[key] = float(value)
+                except (TypeError, ValueError) as exc:
+                    raise SimulationError(
+                        f"Zone '{label}' has invalid value for '{key}': {value!r}."
+                    ) from exc
         if zone_type == "circle" and params.get("r", 0.0) <= 0:
             raise SimulationError(f"Circle zone '{label}' requires a positive radius.")
         if zone_type == "rect" and (params.get("w", 0.0) <= 0 or params.get("h", 0.0) <= 0):
