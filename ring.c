@@ -25,7 +25,7 @@ typedef enum DataType {
     STRING,
 } DataType;
 
-int create_buffer(RingBuffer* cache, size_t buffer_size) {
+int create_buffer(RingBuffer* cache, size_t buffer_size, size_t elem_size) {
     if (!cache) {
         fprintf(stderr, "Invalid cache pointer.\n");
         return -1;
@@ -34,9 +34,15 @@ int create_buffer(RingBuffer* cache, size_t buffer_size) {
     cache->idx = 0;
     cache->capacity = 0;
     cache->buffer = NULL;
+    cache->elem_size = elem_size;
 
     if (buffer_size <= 1) {
         fprintf(stderr, "Buffer size should be greater than 1.\n");
+        return -1;
+    }
+
+    if (elem_size == 0) {
+        fprintf(stderr, "Element size must be greater than 0.\n");
         return -1;
     }
 
@@ -130,7 +136,7 @@ void* reader(void* arg);
 
 int main() {
     RingBuffer cache;
-    if (create_buffer(&cache, 10) != 0) {
+    if (create_buffer(&cache, 10, sizeof(int)) != 0) {
         fprintf(stderr, "Failed to create ring buffer.\n");
         return EXIT_FAILURE;
     }

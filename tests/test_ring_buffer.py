@@ -9,7 +9,9 @@ def test_ring_buffer_thread_synchronization(tmp_path):
 
     writer_iters = int(re.search(r"#define\s+WRITER_ITERS\s+(\d+)", source).group(1))
     reader_iters = int(re.search(r"#define\s+READER_ITERS\s+(\d+)", source).group(1))
-    capacity = int(re.search(r"create_buffer\(&cache,\s*(\d+)\)", source).group(1))
+    capacity = int(
+        re.search(r"create_buffer\(&cache,\s*(\d+)\s*,", source).group(1)
+    )
 
     executable = tmp_path / "ring"
 
