@@ -214,9 +214,6 @@ def run_simulation(payload: Dict) -> Dict:
             frame_entities.append({"id": entity.entity_id, "x": entity.x, "y": entity.y})
         frames.append({"time": t, "entities": frame_entities})
 
-        if duration - t <= epsilon:
-            break
-
         for entity in entities:
             for zone in zones:
                 inside = zone.contains(entity.x, entity.y)
@@ -233,6 +230,9 @@ def run_simulation(payload: Dict) -> Dict:
                     })
                 else:
                     zone_membership[key] = inside
+
+        if duration - t <= epsilon:
+            break
 
         remaining = max(duration - t, 0.0)
         step_dt = dt if remaining - dt > epsilon else remaining
