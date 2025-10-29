@@ -199,7 +199,8 @@ def run_simulation(payload: Dict) -> Dict:
     zones = sim_input.zones
     entities = [Entity(entity.entity_id, entity.x, entity.y) for entity in sim_input.entities]
     dt = sim_input.settings.dt
-    steps = int(sim_input.settings.duration / dt)
+    duration = sim_input.settings.duration
+    epsilon = 1e-9
 
     events: List[Dict] = []
     frames: List[Dict] = []
@@ -207,13 +208,13 @@ def run_simulation(payload: Dict) -> Dict:
     zone_membership: Dict[Tuple[str, str], bool] = {}
 
     t = 0.0
-    for step in range(steps + 1):
+    while True:
         frame_entities = []
         for entity in entities:
             frame_entities.append({"id": entity.entity_id, "x": entity.x, "y": entity.y})
         frames.append({"time": t, "entities": frame_entities})
 
-        if step == steps:
+        if duration - t <= epsilon:
             break
 
         for entity in entities:
@@ -233,6 +234,13 @@ def run_simulation(payload: Dict) -> Dict:
                 else:
                     zone_membership[key] = inside
 
+        remaining = max(duration - t, 0.0)
+        step_dt = dt if remaining - dt > epsilon else remaining
+        next_t = t + step_dt
+        if next_t > duration - epsilon:
+            next_t = duration
+            step_dt = next_t - t
+
         for entity in entities:
             try:
                 dx = fx(entity.x, entity.y, t)
@@ -243,9 +251,9 @@ def run_simulation(payload: Dict) -> Dict:
             if not (math.isfinite(dx) and math.isfinite(dy)):
                 raise SimulationError("Vector field produced non-finite values.")
 
-            entity.x += dx * dt
-            entity.y += dy * dt
+            entity.x += dx * step_dt
+            entity.y += dy * step_dt
 
-        t += dt
+        t = next_t
 
     return {"frames": frames, "events": events}
