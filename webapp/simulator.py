@@ -121,8 +121,17 @@ class SimulationSettings:
 
     @classmethod
     def from_dict(cls, raw: Dict[str, float]) -> "SimulationSettings":
-        duration = float(raw.get("duration", 10.0))
-        dt = float(raw.get("dt", 0.05))
+        raw_duration = raw.get("duration", 10.0)
+        try:
+            duration = float(raw_duration)
+        except (TypeError, ValueError) as exc:
+            raise SimulationError(f"Invalid duration '{raw_duration}'; provide a numeric value.") from exc
+
+        raw_dt = raw.get("dt", 0.05)
+        try:
+            dt = float(raw_dt)
+        except (TypeError, ValueError) as exc:
+            raise SimulationError(f"Invalid time step '{raw_dt}'; provide a numeric value.") from exc
         if duration <= 0:
             raise SimulationError("Duration must be positive.")
         if dt <= 0:
