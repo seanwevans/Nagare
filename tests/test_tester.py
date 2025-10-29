@@ -11,7 +11,7 @@ def build_tester():
     subprocess.run(["make", "tester"], cwd=ROOT, check=True)
 
 
-def run_tester(*args: str) -> subprocess.CompletedProcess:
+def run_tester(*args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [str(ROOT / "tester"), *args],
         cwd=ROOT,
