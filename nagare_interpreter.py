@@ -104,7 +104,15 @@ def parse_zones(src: str) -> List[Zone]:
     )
     zones: List[Zone] = []
     for name, cx, cy, a, b in zone_pattern.findall(src):
-        zones.append(Zone(name, float(cx), float(cy), float(a), float(b), ('', '')))
+        cx_val = float(cx)
+        cy_val = float(cy)
+        a_val = float(a)
+        b_val = float(b)
+        if a_val <= 0 or b_val <= 0:
+            raise ValueError(
+                f"Zone '{name}' has non-positive ellipse axes: a={a_val}, b={b_val}"
+            )
+        zones.append(Zone(name, cx_val, cy_val, a_val, b_val, ('', '')))
     return zones
 
 def parse_execute(src: str, zones: Dict[str, Zone]) -> None:
