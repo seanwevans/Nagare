@@ -45,7 +45,6 @@ _ALLOWED_NODES = (
     ast.Call,
     ast.BinOp,
     ast.UnaryOp,
-    ast.Num,
     ast.Name,
     ast.Load,
     ast.Add,
@@ -59,6 +58,11 @@ _ALLOWED_NODES = (
     ast.Constant,
 )
 
+_MAX_AST_NODE_COUNT = 200
+_MAX_NUMERIC_LITERAL_MAGNITUDE = 1_000_000
+_MAX_POW_EXPONENT = 100
+_MAX_CALL_ARGUMENT_COUNT = 4
+
 
 def _compile_expression(expr: str) -> Callable[[float, float, float], float]:
     if not expr or not expr.strip():
@@ -69,12 +73,39 @@ def _compile_expression(expr: str) -> Callable[[float, float, float], float]:
     except SyntaxError as exc:
         raise SimulationError(f"Invalid expression '{expr}': {exc.msg}") from exc
 
-    for node in ast.walk(tree):
+    nodes = list(ast.walk(tree))
+    if len(nodes) > _MAX_AST_NODE_COUNT:
+        raise SimulationError(
+            f"Expression is too complex; limit it to {_MAX_AST_NODE_COUNT} syntax nodes or fewer."
+        )
+
+    for node in nodes:
         if not isinstance(node, _ALLOWED_NODES):
             raise SimulationError(f"Unsupported syntax in expression '{expr}'.")
+
+        if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
+            if abs(float(node.value)) > _MAX_NUMERIC_LITERAL_MAGNITUDE:
+                raise SimulationError(
+                    "Numeric literal is too large; reduce constant magnitude in the expression."
+                )
+
         if isinstance(node, ast.Call):
             if not isinstance(node.func, ast.Name) or node.func.id not in _ALLOWED_NAMES:
                 raise SimulationError(f"Use of function '{ast.dump(node.func)}' is not allowed.")
+            arg_count = len(node.args) + len(node.keywords)
+            if arg_count > _MAX_CALL_ARGUMENT_COUNT:
+                raise SimulationError(
+                    f"Function calls are limited to {_MAX_CALL_ARGUMENT_COUNT} arguments."
+                )
+
+        if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Pow):
+            exponent_node = node.right
+            if isinstance(exponent_node, ast.Constant) and isinstance(exponent_node.value, (int, float)):
+                exponent = float(exponent_node.value)
+                if abs(exponent) > _MAX_POW_EXPONENT:
+                    raise SimulationError(
+                        f"Exponent magnitude is too large; keep it at {_MAX_POW_EXPONENT} or below."
+                    )
 
     code = compile(tree, "<expr>", "eval")
 
