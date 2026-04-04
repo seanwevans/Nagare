@@ -16,6 +16,7 @@
 typedef struct {
     char filepath[BUFFER_SIZE];
     float x0, y0;    
+    bool append_output;
     int result;
 } ThreadData;
 
@@ -73,8 +74,9 @@ int load_data(const char* filepath, ThreadData** out_data) {
 
 void* simulate(void* arg) {
     ThreadData* data = (ThreadData*) arg;
-    
-    FILE *file = fopen(data->filepath, "a");
+
+    const char* file_mode = data->append_output ? "a" : "w";
+    FILE *file = fopen(data->filepath, file_mode);
     if (file == NULL)
         return NULL;    
         
@@ -95,8 +97,26 @@ void* simulate(void* arg) {
 
 
 int main(int argc, char* argv[]) {
-    if (argc < 2) {
-        fprintf(stderr, "usage  tester  input.file\n");
+    bool append_output = false;
+    const char* input_filepath = NULL;
+
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--append") == 0) {
+            append_output = true;
+            continue;
+        }
+
+        if (input_filepath == NULL) {
+            input_filepath = argv[i];
+            continue;
+        }
+
+        fprintf(stderr, "usage: tester [--append] input.file\n");
+        return EXIT_FAILURE;
+    }
+
+    if (input_filepath == NULL) {
+        fprintf(stderr, "usage: tester [--append] input.file\n");
         return EXIT_FAILURE;
     }
 
@@ -108,11 +128,15 @@ int main(int argc, char* argv[]) {
     // };
 
     ThreadData* thread_data = NULL;
-    int thread_count = load_data(argv[1], &thread_data);
+    int thread_count = load_data(input_filepath, &thread_data);
     if (thread_count < 0) {
-        fprintf(stderr, "Failed to load thread data from '%s': %s\n", argv[1],
+        fprintf(stderr, "Failed to load thread data from '%s': %s\n", input_filepath,
                 strerror(-thread_count));
         return EXIT_FAILURE;
+    }
+
+    for (int i = 0; i < thread_count; i++) {
+        thread_data[i].append_output = append_output;
     }
 
     pthread_t threads[MAX_THREADS];
