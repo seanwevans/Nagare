@@ -39,3 +39,28 @@ def test_ring_buffer_thread_synchronization(tmp_path):
     assert any(token != "NULL" for token in tokens)
 
     assert len(tokens) == capacity * reader_iters
+
+
+def test_ring_buffer_allocation_failure_is_graceful(tmp_path):
+    repo_root = Path(__file__).resolve().parents[1]
+    executable = tmp_path / "ring_fail"
+
+    compile_cmd = [
+        "gcc",
+        "-O2",
+        "-Wall",
+        "-DRING_TEST_ALLOC_FAIL_AT=1",
+        "ring.c",
+        "-o",
+        str(executable),
+        "-lpthread",
+    ]
+    subprocess.run(compile_cmd, cwd=repo_root, check=True)
+
+    run = subprocess.run(
+        [str(executable)], cwd=repo_root, capture_output=True, text=True
+    )
+
+    assert run.returncode != 0
+    assert "Injected slot allocation failure" in run.stderr
+    assert "Writer thread stopping due to add_to_buffer failure." in run.stderr

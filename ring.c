@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <stdatomic.h>
 
 #define WRITER_ITERS 25
 #define READER_ITERS 25
@@ -15,9 +16,11 @@ typedef struct RingBuffer {
     void** buffer;
     size_t elem_size;
     pthread_mutex_t lock;
+    atomic_int shutdown_requested;
 } RingBuffer;
 
 static size_t slot_allocations = 0;
+static atomic_size_t slot_allocation_attempts = 0;
 
 typedef enum DataType {
     INT,
@@ -35,6 +38,8 @@ int create_buffer(RingBuffer* cache, size_t buffer_size, size_t elem_size) {
     cache->capacity = 0;
     cache->buffer = NULL;
     cache->elem_size = elem_size;
+    atomic_store(&cache->shutdown_requested, 0);
+    atomic_store(&slot_allocation_attempts, 0);
 
     if (buffer_size <= 1) {
         fprintf(stderr, "Buffer size should be greater than 1.\n");
@@ -92,17 +97,27 @@ void print_buffer(RingBuffer* cache, DataType type) {
 }
 
 
-void add_to_buffer(RingBuffer* cache, const void* value) {
+int add_to_buffer(RingBuffer* cache, const void* value) {
     pthread_mutex_lock(&cache->lock);
 
     void* slot = cache->buffer[cache->idx];
 
     if (slot == NULL) {
+        size_t allocation_attempt = atomic_fetch_add(&slot_allocation_attempts, 1) + 1;
+#ifdef RING_TEST_ALLOC_FAIL_AT
+        if (allocation_attempt == (size_t)RING_TEST_ALLOC_FAIL_AT) {
+            pthread_mutex_unlock(&cache->lock);
+            fprintf(stderr, "Injected slot allocation failure at attempt %zu.\n", allocation_attempt);
+            atomic_store(&cache->shutdown_requested, 1);
+            return -1;
+        }
+#endif
         slot = malloc(cache->elem_size);
         if (!slot) {
             pthread_mutex_unlock(&cache->lock);
             fprintf(stderr, "Failed to allocate ring buffer slot.\n");
-            exit(EXIT_FAILURE);
+            atomic_store(&cache->shutdown_requested, 1);
+            return -1;
         }
         cache->buffer[cache->idx] = slot;
         ++slot_allocations;
@@ -112,6 +127,7 @@ void add_to_buffer(RingBuffer* cache, const void* value) {
     cache->idx = ( cache->idx + 1 ) % cache->capacity;
 
     pthread_mutex_unlock(&cache->lock);
+    return 0;
 }
 
 void destroy_buffer(RingBuffer* cache) {
@@ -150,16 +166,25 @@ int main() {
     pthread_join(w2, NULL);
     pthread_join(r, NULL);
 
+    int should_fail = atomic_load(&cache.shutdown_requested);
     destroy_buffer(&cache);
+    assert(slot_allocations == 0);
 
-    return 0;
+    return should_fail ? EXIT_FAILURE : EXIT_SUCCESS;
 }
 
 void* writer(void* arg) {
     RingBuffer* c = (RingBuffer*)arg;
     for (int i = 0; i < WRITER_ITERS; ++i) {
+        if (atomic_load(&c->shutdown_requested)) {
+            break;
+        }
         int value = i;
-        add_to_buffer(c, &value);
+        if (add_to_buffer(c, &value) != 0) {
+            fprintf(stderr, "Writer thread stopping due to add_to_buffer failure.\n");
+            atomic_store(&c->shutdown_requested, 1);
+            break;
+        }
         usleep(1000);
     }
     return NULL;
@@ -168,6 +193,9 @@ void* writer(void* arg) {
 void* reader(void* arg) {
     RingBuffer* c = (RingBuffer*)arg;
     for (int i = 0; i < READER_ITERS; ++i) {
+        if (atomic_load(&c->shutdown_requested)) {
+            break;
+        }
         print_buffer(c, INT);
         usleep(1000);
     }
