@@ -27,3 +27,17 @@ def test_parse_execute_raises_for_unknown_zone():
     src = "EXECUTE { prog<missing> { display \"hello\" } }"
     with pytest.raises(ValueError, match="missing"):
         parse_execute(src, {})
+
+
+@pytest.mark.parametrize(
+    ("axis_value", "expected_fragment"),
+    [
+        ("0", "a=0.0, b=1.0"),
+        ("-1", "a=-1.0, b=1.0"),
+    ],
+)
+def test_parse_zones_rejects_non_positive_ellipse_axis(axis_value, expected_fragment):
+    src = f"ZONES {{ badZone {{ Ellipse((0, 0), {axis_value}, 1) }} }}"
+    with pytest.raises(ValueError, match=r"badZone") as exc_info:
+        parse_zones(src)
+    assert expected_fragment in str(exc_info.value)
