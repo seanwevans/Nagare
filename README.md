@@ -93,6 +93,15 @@ entities, and watch their trajectories evolve alongside zone entry/exit events.
    ```bash
    python -m webapp.app
    ```
+   The server reads runtime settings from environment variables:
+   - `FLASK_DEBUG` (default: `false`) — set to `true` for auto-reload and debug mode locally.
+   - `HOST` (default: `127.0.0.1`) — set to `0.0.0.0` when you need LAN/container access.
+   - `PORT` (default: `5000`) — choose a different port if `5000` is already in use.
+
+   Recommended local development command:
+   ```bash
+   FLASK_DEBUG=true HOST=127.0.0.1 PORT=5000 python -m webapp.app
+   ```
 3. Open your browser to <http://localhost:5000> to configure and run simulations.
 
 Zones can be added via the sidebar, and entities are placed by clicking on the canvas.
