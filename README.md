@@ -130,3 +130,31 @@ Feel free to submit pull requests for bug fixes, new features, or additional sim
 ## License
 This project is licensed under the MIT License. See `LICENSE` for details.
 
+
+## GitHub Pages Runtime Playground
+
+A serverless Nagare runtime is available in `docs/` for deployment with GitHub Pages.
+It runs entirely in the browser, so no Flask server or Python process is required after
+publishing the static files.
+
+### Features
+- Draw ellipse zones directly on the canvas and automatically insert them into the
+  `ZONES` block as `Ellipse((cx, cy), a, b)` definitions.
+- Click to place entities, erase entities or drawn zones, and animate the resulting
+  Nagare program path.
+- Parse and run the repository's lightweight Nagare subset: `program { x_expr, y_expr }`,
+  ellipse zones, `display "message"`, and `finish` actions.
+
+### Deploying on GitHub Pages
+1. Commit the repository with the `docs/` directory present.
+2. In the GitHub repository settings, choose **Pages**.
+3. Set the source to **Deploy from a branch**, select the desired branch, and choose
+   `/docs` as the publishing folder.
+4. Save the configuration. GitHub Pages will serve `docs/index.html` as the static
+   Nagare runtime playground.
+
+You can also preview it locally without any build step:
+```bash
+python3 -m http.server 8000 --directory docs
+```
+Then open <http://localhost:8000>.

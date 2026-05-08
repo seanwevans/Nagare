@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Nagare Runtime Playground</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Static GitHub Pages runtime</p>
+        <h1>Nagare Runtime Playground</h1>
+        <p>
+          Draw zones directly on the canvas, place entities, edit a Nagare program, and run it entirely in your browser.
+        </p>
+      </div>
+      <div class="hero-actions">
+        <button id="loadExample" type="button">Load example</button>
+        <button id="runProgram" type="button" class="primary">Run Nagare</button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <section class="panel editor-panel" aria-labelledby="program-heading">
+        <div class="panel-header">
+          <div>
+            <h2 id="program-heading">Nagare program</h2>
+            <p>
+              Supported: <code>program { expr, expr }</code>, ellipse zones, <code>display</code>, and <code>finish</code> actions.
+            </p>
+          </div>
+        </div>
+        <textarea id="programSource" spellcheck="false" aria-label="Nagare source code"></textarea>
+        <div class="settings-grid">
+          <label>
+            Steps
+            <input id="stepLimit" type="number" min="1" max="2000" value="160" />
+          </label>
+          <label>
+            Frame delay (ms)
+            <input id="frameDelay" type="number" min="0" max="1000" value="70" />
+          </label>
+        </div>
+        <div id="status" role="status" aria-live="polite"></div>
+      </section>
+
+      <section class="stage panel" aria-labelledby="canvas-heading">
+        <div class="panel-header stage-header">
+          <div>
+            <h2 id="canvas-heading">Canvas</h2>
+            <p>Choose a tool, then click or drag on the canvas. Drawn zones are inserted into the program.</p>
+          </div>
+          <div class="toolbox" role="toolbar" aria-label="Canvas tools">
+            <button type="button" class="tool active" data-tool="entity">Entity</button>
+            <button type="button" class="tool" data-tool="ellipse">Ellipse</button>
+            <button type="button" class="tool" data-tool="erase">Erase</button>
+            <button id="resetRuntime" type="button">Reset</button>
+          </div>
+        </div>
+        <canvas id="runtimeCanvas" width="900" height="620" aria-label="Nagare drawing canvas"></canvas>
+        <div class="legend" aria-label="Canvas legend">
+          <span><i class="entity-dot"></i>Entity</span>
+          <span><i class="zone-dot"></i>Drawn / parsed zone</span>
+          <span><i class="path-dot"></i>Runtime path</span>
+        </div>
+      </section>
+
+      <aside class="panel side-panel" aria-labelledby="runtime-heading">
+        <h2 id="runtime-heading">Runtime output</h2>
+        <section>
+          <h3>Entities</h3>
+          <ul id="entityList" class="data-list"></ul>
+        </section>
+        <section>
+          <h3>Zones</h3>
+          <ul id="zoneList" class="data-list"></ul>
+        </section>
+        <section>
+          <h3>Events</h3>
+          <ul id="eventLog" class="data-list log"></ul>
+        </section>
+      </aside>
+    </main>
+
+    <script src="./runtime.js" type="module"></script>
+  </body>
+</html>
