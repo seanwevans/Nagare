@@ -18,6 +18,7 @@ import sys
 from dataclasses import dataclass
 from typing import Dict, List, Tuple
 
+
 @dataclass
 class Zone:
     name: str

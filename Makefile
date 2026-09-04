@@ -22,6 +22,14 @@ install-dev:
 test:
 	$(PYTHON) -m pytest
 
+.PHONY: lint
+lint:
+	$(PYTHON) -m ruff check .
+
+.PHONY: format
+format:
+	$(PYTHON) -m ruff format .
+
 .PHONY: clean
 clean:
 	rm -f nagare tester ring

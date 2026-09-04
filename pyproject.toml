@@ -1,0 +1,34 @@
+# Tooling configuration for the Nagare repository.
+#
+# Dependencies are installed from requirements.txt / requirements-dev.txt.
+# This file intentionally configures tools only; the repository is not yet
+# published as a distributable package (see DEPLOYMENT.md, "Later stages").
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+target-version = "py310"
+line-length = 110
+exclude = ["docs", ".git"]
+
+[tool.ruff.lint]
+# `UP` (pyupgrade) is deliberately left out for now: adopting it rewrites every
+# typing.Dict/List annotation in the repository and would bury real findings in
+# style churn. Enable it in a dedicated commit once the pipeline has settled.
+select = ["E", "F", "W", "I", "B", "S"]
+ignore = [
+    "S101",  # asserts are the point in tests
+    "E501",  # long lines are left to the formatter
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests intentionally shell out to gcc/make, bind test servers and use fake tokens.
+"tests/*" = ["S603", "S607", "S104", "S105"]
+# eval() in the simulator is guarded by an AST allow-list (see _compile_expression).
+"webapp/simulator.py" = ["S307"]
+
+[tool.coverage.run]
+source = ["webapp", "nagare_interpreter"]
+omit = ["tests/*"]
