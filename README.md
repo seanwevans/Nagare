@@ -169,13 +169,24 @@ publishing the static files.
 ### Deploying on GitHub Pages
 1. Commit the repository with the `docs/` directory present.
 2. In the GitHub repository settings, choose **Pages**.
-3. Set the source to **Deploy from a branch**, select the desired branch, and choose
-   `/docs` as the publishing folder.
-4. Save the configuration. GitHub Pages will serve `docs/index.html` as the static
-   Nagare runtime playground.
+3. Set the source to **GitHub Actions**.
+4. Save the configuration. The `Deploy Pages playground` workflow publishes
+   `docs/` on every push to `main` that touches it.
 
 You can also preview it locally without any build step:
 ```bash
 python3 -m http.server 8000 --directory docs
 ```
 Then open <http://localhost:8000>.
+
+---
+
+## Continuous Integration and Delivery
+
+Every pull request runs lint, the test suite on Python 3.10-3.13, a C build under
+`-Werror` and ASan/UBSan, CodeQL, and a container build with a live smoke test.
+Pushes to `main` that touch `docs/` deploy the playground to GitHub Pages, and
+`v*` tags publish a container image to GHCR.
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for the full pipeline, configuration
+variables, operational endpoints and security notes.
