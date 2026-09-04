@@ -30,6 +30,14 @@ lint:
 format:
 	$(PYTHON) -m ruff format .
 
+.PHONY: serve
+serve:
+	$(PYTHON) -m gunicorn --config gunicorn.conf.py webapp.wsgi:application
+
+.PHONY: docker
+docker:
+	docker build -t nagare-webapp:local .
+
 .PHONY: clean
 clean:
 	rm -f nagare tester ring
