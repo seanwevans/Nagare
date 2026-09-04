@@ -1,0 +1,2 @@
+# Runtime dependencies for the Nagare web player.
+Flask>=3.0,<4.0

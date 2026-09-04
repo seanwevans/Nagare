@@ -1,5 +1,6 @@
 CC ?= gcc
 CFLAGS ?= -O2 -Wall
+PYTHON ?= python3
 
 nagare: nagare.c
 	$(CC) $(CFLAGS) nagare.c -o nagare
@@ -9,6 +10,14 @@ tester: tester.c
 
 ring: ring.c
 	$(CC) $(CFLAGS) ring.c -o ring -lpthread
+
+.PHONY: install-dev
+install-dev:
+	$(PYTHON) -m pip install -r requirements-dev.txt
+
+.PHONY: test
+test:
+	$(PYTHON) -m pytest
 
 .PHONY: clean
 clean:

@@ -85,9 +85,10 @@ entities, and watch their trajectories evolve alongside zone entry/exit events.
 
 ### Launching the App
 
-1. Install Flask if it is not already available:
+1. Install the dependencies:
    ```bash
-   pip install flask
+   pip install -r requirements.txt      # runtime only
+   pip install -r requirements-dev.txt  # plus the test tooling
    ```
 2. Start the development server from the project root:
    ```bash
