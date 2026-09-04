@@ -1,0 +1,14 @@
+.git
+.github
+__pycache__/
+*.pyc
+tests/
+docs/
+*.c
+*.nagare
+grammar.*
+mockup.txt
+Makefile
+nagare
+tester
+ring

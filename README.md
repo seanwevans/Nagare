@@ -99,6 +99,26 @@ entities, and watch their trajectories evolve alongside zone entry/exit events.
    - `HOST` (default: `127.0.0.1`) — set to `0.0.0.0` when you need LAN/container access.
    - `PORT` (default: `5000`) — choose a different port if `5000` is already in use.
 
+### Running in Production
+
+`python -m webapp.app` starts Flask's development server and is not suitable for
+anything but local work. Serve the app through the WSGI entrypoint instead:
+
+```bash
+make serve   # gunicorn --config gunicorn.conf.py webapp.wsgi:application
+```
+
+or build and run the container, which does the same thing as an unprivileged
+user with a health check wired to `/healthz`:
+
+```bash
+make docker
+docker run -p 8000:8000 nagare-webapp:local
+```
+
+Both read `PORT`, `WEB_CONCURRENCY`, `WEB_THREADS`, `WEB_TIMEOUT` and `LOG_LEVEL`
+from the environment; see `gunicorn.conf.py` for the defaults.
+
    Recommended local development command:
    ```bash
    FLASK_DEBUG=true HOST=127.0.0.1 PORT=5000 python -m webapp.app

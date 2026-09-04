@@ -58,3 +58,9 @@ def test_simulate_rejects_oversized_payload():
         content_type="application/json",
     )
     assert response.status_code == 413
+
+
+def test_wsgi_entrypoint_exposes_application():
+    from webapp.wsgi import application
+
+    assert application is app
