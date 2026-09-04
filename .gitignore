@@ -3,3 +3,6 @@ __pycache__/
 nagare
 tester
 *.o
+.pytest_cache/
+.ruff_cache/
+.coverage

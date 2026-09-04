@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from nagare_interpreter import parse_zones, parse_script, run, parse_execute
+from nagare_interpreter import parse_execute, parse_script, parse_zones, run
 
 
 def test_parse_zones_multiple_definitions():

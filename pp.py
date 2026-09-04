@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
-import imageio
+import argparse
 import os
 import shutil
 import sys
 import tempfile
-import argparse
 
+import imageio
 import matplotlib.pyplot as plt
 
 
@@ -49,7 +49,7 @@ def compose_gif(file_path, out='animation_from_file.gif', fps=10):
     interrupted = False
 
     try:
-        for idx, (iteration, inside, x, y) in enumerate(parse_file(file_path)):
+        for idx, (_iteration, _inside, x, y) in enumerate(parse_file(file_path)):
             x_values.append(x)
             y_values.append(y)
             frame_file = generate_frame(ax, line, x_values, y_values, idx, temp_folder)

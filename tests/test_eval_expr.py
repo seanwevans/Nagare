@@ -1,5 +1,7 @@
 import math
+
 import pytest
+
 from nagare_interpreter import eval_expr
 
 

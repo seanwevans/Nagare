@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 DOCS = Path(__file__).resolve().parents[1] / "docs"
 
 
