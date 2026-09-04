@@ -34,3 +34,27 @@ def test_simulate_rejects_non_numeric_zone_parameters(client, zone_payload, expe
     assert response.status_code == 400
     data = response.get_json()
     assert expected_fragment in data["error"]
+
+
+def test_healthz_reports_ok():
+    client = app.test_client()
+    response = client.get("/healthz")
+    assert response.status_code == 200
+    assert response.get_json() == {"status": "ok"}
+
+
+def test_simulate_rejects_non_object_payload():
+    client = app.test_client()
+    response = client.post("/simulate", json=[1, 2, 3])
+    assert response.status_code == 400
+    assert "JSON object" in response.get_json()["error"]
+
+
+def test_simulate_rejects_oversized_payload():
+    client = app.test_client()
+    response = client.post(
+        "/simulate",
+        data=b"{" + b" " * (app.config["MAX_CONTENT_LENGTH"] + 1) + b"}",
+        content_type="application/json",
+    )
+    assert response.status_code == 413
