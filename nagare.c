@@ -100,5 +100,10 @@ int main() {
         }
     };
 
+    /* The runtime entry point is still a scaffold: these descriptors document the
+       intended initial state and execution zone but are not yet interpreted. */
+    (void)init;
+    (void)ez1;
+
     return 0;
 }
