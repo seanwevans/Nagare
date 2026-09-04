@@ -2,6 +2,9 @@ CC ?= gcc
 CFLAGS ?= -O2 -Wall
 PYTHON ?= python3
 
+.PHONY: all
+all: nagare tester ring
+
 nagare: nagare.c
 	$(CC) $(CFLAGS) nagare.c -o nagare
 

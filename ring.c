@@ -104,6 +104,7 @@ int add_to_buffer(RingBuffer* cache, const void* value) {
 
     if (slot == NULL) {
         size_t allocation_attempt = atomic_fetch_add(&slot_allocation_attempts, 1) + 1;
+        (void)allocation_attempt;  /* only read by the fault-injection build below */
 #ifdef RING_TEST_ALLOC_FAIL_AT
         if (allocation_attempt == (size_t)RING_TEST_ALLOC_FAIL_AT) {
             pthread_mutex_unlock(&cache->lock);
