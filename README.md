@@ -152,19 +152,61 @@ Feel free to submit pull requests for bug fixes, new features, or additional sim
 This project is licensed under the MIT License. See `LICENSE` for details.
 
 
-## GitHub Pages Runtime Playground
+## GitHub Pages 3D Runtime Playground
 
 A serverless Nagare runtime is available in `docs/` for deployment with GitHub Pages.
-It runs entirely in the browser, so no Flask server or Python process is required after
-publishing the static files.
+It renders with [three.js](https://threejs.org) and simulates with
+[cannon-es](https://github.com/pmndrs/cannon-es), and runs entirely in the browser, so no
+Flask server or Python process is required after publishing the static files.
 
-### Features
-- Draw ellipse zones directly on the canvas and automatically insert them into the
-  `ZONES` block as `Ellipse((cx, cy), a, b)` definitions.
-- Click to place entities, erase entities or drawn zones, and animate the resulting
-  Nagare program path.
-- Parse and run the repository's lightweight Nagare subset: `program { x_expr, y_expr }`,
-  ellipse zones, `display "message"`, and `finish` actions.
+### The 3D environment
+- Entities are rigid bodies in a `cannon-es` world: they carry mass and momentum, bounce
+  off `solid` zones and off each other, and can fall under gravity inside an optional
+  walled arena.
+- The Nagare program is a map on `(x, y, z)`. Each simulation step the map is evaluated
+  at every entity's position and the difference becomes the field velocity, coupled into
+  the bodies in one of two ways:
+  - **Steer** — a force pushes each body toward the field velocity, so collisions,
+    gravity and impulses can fight the field.
+  - **Flow** — the field velocity is written straight onto the body, so trajectories
+    follow the program exactly.
+- Nagare's `z` axis is the vertical one; the three.js scene is `y`-up, and the conversion
+  lives in `docs/src/space.js`. A 2D program therefore runs flat on the ground plane.
+
+### Authoring
+- `program name { x_expr, y_expr, z_expr }` defines the field. Two expressions still work
+  and carry `z` through unchanged, so existing 2D programs keep running.
+- Zones can be `Ellipsoid((cx, cy, cz), a, b, c)`, `Ellipse((cx, cy), a, b)`,
+  `Sphere((cx, cy, cz), r)` or `Box((cx, cy, cz), hx, hy, hz)`. Adding `solid` also gives
+  the zone a static collider.
+- Actions are `display "message"`, `finish`, and `impulse(ix, iy, iz)` — a playground
+  extension that kicks the entity that entered the zone.
+- Expressions may use `x`, `y`, `z`, `t`, the constants `pi`, `e`, `tau`, and the usual
+  math functions (`sin`, `cos`, `sqrt`, `hypot`, `atan2`, ...). Anything else is rejected
+  before the expression is compiled.
+
+### Interacting
+- **Orbit** to move the camera; **Entity** to drop a body onto the highlighted build
+  plane; **Zone** to drag out an ellipsoid, which is written into the `ZONES` block;
+  **Erase** to remove a body, or a zone along with its `ZONES` and `EXECUTE` lines.
+- The build plane's altitude, the height of new zones, gravity, field response, damping,
+  restitution, entity radius and arena size are all live controls.
+- Space toggles the run, `R` restarts it from the entities' start positions.
+
+### Layout
+```
+docs/
+  index.html      page shell and the import map for three.js / cannon-es
+  style.css
+  runtime.js      app: tools, simulation loop, field/physics coupling, UI
+  src/nagare.js   the Nagare subset: expressions, zones, actions
+  src/scene.js    three.js renderer, camera, orbit controls, lighting, picking
+  src/physics.js  cannon-es world, entity bodies, solid zone colliders
+  src/visuals.js  entity meshes and trails, zone volumes, labels
+  src/space.js    Nagare (x, y, z) <-> world (x, z, y)
+```
+three.js and cannon-es are loaded from `cdn.jsdelivr.net` via an import map pinned to
+exact versions, so there is no build step and nothing is vendored into the repository.
 
 ### Deploying on GitHub Pages
 1. Commit the repository with the `docs/` directory present.
@@ -177,7 +219,9 @@ You can also preview it locally without any build step:
 ```bash
 python3 -m http.server 8000 --directory docs
 ```
-Then open <http://localhost:8000>.
+Then open <http://localhost:8000>. The page needs outbound access to
+`cdn.jsdelivr.net` for three.js and cannon-es; if that fails it says so instead of
+rendering a blank scene.
 
 ---
 

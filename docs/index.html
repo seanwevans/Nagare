@@ -3,23 +3,48 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Nagare Runtime Playground</title>
+    <title>Nagare 3D Runtime Playground</title>
+    <meta
+      name="description"
+      content="Author Nagare vector fields and zones and watch them evolve in a three.js scene driven by a cannon-es rigid body world."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23081120'/%3E%3Cpath d='M5 21c4-9 8 4 11-5s4 6 11-3' fill='none' stroke='%2322d3ee' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E"
+    />
     <link rel="stylesheet" href="./style.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.185.1/build/three.module.min.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.185.1/examples/jsm/",
+          "cannon-es": "https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js"
+        }
+      }
+    </script>
   </head>
   <body>
     <header class="hero">
       <div>
-        <p class="eyebrow">Static GitHub Pages runtime</p>
-        <h1>Nagare Runtime Playground</h1>
+        <p class="eyebrow">Static GitHub Pages runtime · three.js + cannon-es</p>
+        <h1>Nagare 3D Runtime Playground</h1>
         <p>
-          Draw zones directly on the canvas, place entities, edit a Nagare program, and run it entirely in your browser.
+          Place entities in a volumetric scene, sculpt ellipsoid and box zones, and let a rigid body
+          world integrate your Nagare vector field &mdash; entirely in the browser.
         </p>
       </div>
       <div class="hero-actions">
         <button id="loadExample" type="button">Load example</button>
+        <button id="restartRun" type="button">Restart</button>
         <button id="runProgram" type="button" class="primary">Run Nagare</button>
       </div>
     </header>
+
+    <div id="bootError" class="boot-error" hidden>
+      <strong>The 3D libraries could not be loaded.</strong>
+      three.js and cannon-es are fetched from jsDelivr at run time, so this page needs network access
+      to <code>cdn.jsdelivr.net</code>.
+    </div>
 
     <main class="workspace">
       <section class="panel editor-panel" aria-labelledby="program-heading">
@@ -27,42 +52,124 @@
           <div>
             <h2 id="program-heading">Nagare program</h2>
             <p>
-              Supported: <code>program { expr, expr }</code>, ellipse zones, <code>display</code>, and <code>finish</code> actions.
+              <code>program { x, y, z }</code> drives the field. Zones accept <code>Ellipsoid</code>,
+              <code>Ellipse</code>, <code>Sphere</code> and <code>Box</code>, optionally
+              <code>solid</code>. Actions: <code>display</code>, <code>finish</code>, <code>impulse</code>.
             </p>
           </div>
         </div>
         <textarea id="programSource" spellcheck="false" aria-label="Nagare source code"></textarea>
+
         <div class="settings-grid">
           <label>
-            Steps
-            <input id="stepLimit" type="number" min="1" max="2000" value="160" />
+            Step limit
+            <input id="stepLimit" type="number" min="1" max="20000" value="1200" />
           </label>
           <label>
-            Frame delay (ms)
-            <input id="frameDelay" type="number" min="0" max="1000" value="70" />
+            Step interval (ms)
+            <input id="stepInterval" type="number" min="4" max="1000" value="45" />
           </label>
         </div>
+
+        <details class="control-group" open>
+          <summary>Rigid body world</summary>
+          <div class="control-grid">
+            <label class="wide">
+              Field coupling
+              <select id="couplingMode">
+                <option value="steer">Steer &mdash; field pushes the bodies</option>
+                <option value="flow">Flow &mdash; field sets the velocity</option>
+              </select>
+            </label>
+            <label>
+              Gravity <output id="gravityValue">0.0</output>
+              <input id="gravity" type="range" min="0" max="20" step="0.1" value="0" />
+            </label>
+            <label>
+              Field response <output id="fieldResponseValue">8.0</output>
+              <input id="fieldResponse" type="range" min="0.5" max="30" step="0.5" value="8" />
+            </label>
+            <label>
+              Linear damping <output id="dampingValue">0.05</output>
+              <input id="damping" type="range" min="0" max="0.9" step="0.01" value="0.05" />
+            </label>
+            <label>
+              Restitution <output id="restitutionValue">0.55</output>
+              <input id="restitution" type="range" min="0" max="1" step="0.05" value="0.55" />
+            </label>
+            <label>
+              Entity radius <output id="entityRadiusValue">0.22</output>
+              <input id="entityRadius" type="range" min="0.05" max="0.6" step="0.01" value="0.22" />
+            </label>
+            <label>
+              Arena size <output id="arenaSizeValue">14</output>
+              <input id="arenaSize" type="range" min="6" max="40" step="1" value="14" />
+            </label>
+            <label class="checkbox"><input id="enableFloor" type="checkbox" /> Floor collider</label>
+            <label class="checkbox"><input id="enableWalls" type="checkbox" /> Arena walls</label>
+          </div>
+        </details>
+
+        <details class="control-group">
+          <summary>Scene</summary>
+          <div class="control-grid">
+            <label class="checkbox"><input id="showTrails" type="checkbox" checked /> Trails</label>
+            <label class="checkbox"><input id="showLabels" type="checkbox" checked /> Zone labels</label>
+            <label class="checkbox"><input id="showShadows" type="checkbox" checked /> Shadows</label>
+            <label class="checkbox"><input id="showGrid" type="checkbox" checked /> Ground grid</label>
+            <label class="checkbox"><input id="followEntities" type="checkbox" /> Follow entities</label>
+          </div>
+        </details>
+
         <div id="status" role="status" aria-live="polite"></div>
       </section>
 
       <section class="stage panel" aria-labelledby="canvas-heading">
         <div class="panel-header stage-header">
           <div>
-            <h2 id="canvas-heading">Canvas</h2>
-            <p>Choose a tool, then click or drag on the canvas. Drawn zones are inserted into the program.</p>
+            <h2 id="canvas-heading">3D stage</h2>
+            <p>Drag to orbit. Pick a tool, then click or drag on the highlighted build plane.</p>
           </div>
-          <div class="toolbox" role="toolbar" aria-label="Canvas tools">
-            <button type="button" class="tool active" data-tool="entity">Entity</button>
-            <button type="button" class="tool" data-tool="ellipse">Ellipse</button>
+          <div class="toolbox" role="toolbar" aria-label="Scene tools">
+            <button type="button" class="tool active" data-tool="orbit">Orbit</button>
+            <button type="button" class="tool" data-tool="entity">Entity</button>
+            <button type="button" class="tool" data-tool="ellipsoid">Zone</button>
             <button type="button" class="tool" data-tool="erase">Erase</button>
-            <button id="resetRuntime" type="button">Reset</button>
+            <button id="resetRuntime" type="button">Clear</button>
           </div>
         </div>
-        <canvas id="runtimeCanvas" width="900" height="620" aria-label="Nagare drawing canvas"></canvas>
-        <div class="legend" aria-label="Canvas legend">
-          <span><i class="entity-dot"></i>Entity</span>
-          <span><i class="zone-dot"></i>Drawn / parsed zone</span>
-          <span><i class="path-dot"></i>Runtime path</span>
+
+        <div class="viewport">
+          <canvas id="runtimeCanvas" aria-label="Nagare 3D scene"></canvas>
+          <div class="hud" aria-hidden="true">
+            <span id="hudStep">step 0</span>
+            <span id="hudBodies">0 bodies</span>
+            <span id="hudFps">-- fps</span>
+          </div>
+          <div class="view-buttons">
+            <button id="viewReset" type="button" title="Default camera">Home</button>
+            <button id="viewTop" type="button" title="Look straight down">Top</button>
+            <button id="viewFront" type="button" title="Look along the y axis">Front</button>
+          </div>
+        </div>
+
+        <div class="stage-controls">
+          <label>
+            Build plane z <output id="placeHeightValue">0.0</output>
+            <input id="placeHeight" type="range" min="-4" max="8" step="0.1" value="0" />
+          </label>
+          <label>
+            New zone height <output id="zoneHeightValue">0.6</output>
+            <input id="zoneHeight" type="range" min="0.1" max="4" step="0.1" value="0.6" />
+          </label>
+          <label class="checkbox"><input id="zoneSolid" type="checkbox" /> Draw solid zones</label>
+        </div>
+
+        <div class="legend" aria-label="Scene legend">
+          <span><i class="entity-dot"></i>Entity &amp; trail</span>
+          <span><i class="zone-dot"></i>Program zone</span>
+          <span><i class="solid-dot"></i>Solid zone (collides)</span>
+          <span><i class="drawn-dot"></i>Zone being drawn</span>
         </div>
       </section>
 
@@ -83,6 +190,14 @@
       </aside>
     </main>
 
+    <script>
+      // three.js and cannon-es come from a CDN; surface a clear message if that fails.
+      window.setTimeout(function () {
+        if (!window.__nagareReady) {
+          document.getElementById('bootError').hidden = false;
+        }
+      }, 9000);
+    </script>
     <script src="./runtime.js" type="module"></script>
   </body>
 </html>
