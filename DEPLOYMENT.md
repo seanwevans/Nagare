@@ -7,7 +7,7 @@ There are two independently deployable artifacts:
 
 | Artifact | What it is | Where it goes |
 | --- | --- | --- |
-| `docs/` playground | Static, browser-only Nagare runtime | GitHub Pages |
+| `docs/` playground | Static, browser-only 3D Nagare runtime (three.js + cannon-es) | GitHub Pages |
 | `webapp/` player | Flask + gunicorn service exposing `POST /simulate` | Container image on GHCR |
 
 The C sources (`nagare.c`, `ring.c`, `tester.c`) are built and exercised in CI but
@@ -41,6 +41,9 @@ the build is visible before it merges.
   deployment action on any push to `main` that touches `docs/`. This replaces
   the manual "Deploy from a branch → /docs" setting described in the README; in
   repository **Settings → Pages**, set the source to **GitHub Actions**.
+  The playground loads three.js and cannon-es from `cdn.jsdelivr.net` through an
+  import map pinned to exact versions, so the published page needs outbound
+  access to that CDN; nothing is bundled or built ahead of time.
 - **Container image** — `.github/workflows/release.yml` builds and pushes
   `ghcr.io/<owner>/<repo>` on any `v*` tag, tagged with the full version, the
   `major.minor` line and the commit SHA. Cutting a release is `git tag v0.1.0 &&
